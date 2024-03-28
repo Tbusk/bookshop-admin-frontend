@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import {FormikProps} from "formik";
 // Interface for Book component
 export interface Book {
     bookID: number,
@@ -43,10 +44,9 @@ export interface ColumnMeta {
 
 // Interface for Book form component
 export interface BookFormTemplate {
-    book: Book,
     handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
     showImage: boolean,
     validationSchema?: Yup.ObjectSchema<any>
     isSubmitting?: boolean,
-    handleSubmit?: () => void,
+    formik: FormikProps<Book>
 }

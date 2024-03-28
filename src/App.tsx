@@ -27,7 +27,7 @@ import {SearchIcon} from "primereact/icons/search";
 import {Toast} from 'primereact/toast';
 import {currencyFormatter, emptyBook} from "./logic/misc";
 import {Calendar} from "primereact/calendar";
-import {Formik, Field, Form, ErrorMessage, FormikProps} from 'formik';
+import {Formik, Field, Form, ErrorMessage, FormikProps, useFormik} from 'formik';
 import * as Yup from 'yup';
 
 function App() {
@@ -192,7 +192,7 @@ function App() {
     );
 
     // Add book dialog footer with add and cancel buttons
-    const addBookDialogFooter = () => (
+    const addBookDialogFooter = (formik: FormikProps<Book>) => (
         <div className="d-flex justify-content-end">
 
             <div className="m-1">
@@ -202,11 +202,7 @@ function App() {
             </div>
             <div className="m-1">
                 <button onClick={() => {
-                    if(!submitting){
-                    setBookAddDialog(false);
-                    addCreatedBook(bookToAdd);
-                    setBookToAdd(emptyBook);
-                    }
+                    formik.handleSubmit();
                 }} className="btn btn-success d-flex align-items-center" style={{paddingLeft: '2rem', paddingRight: '2rem'}}><CheckIcon style={{marginRight: '.5rem'}}/>Add
                 </button>
             </div>
@@ -264,6 +260,25 @@ function App() {
                 </button>
             </div>);
     };
+
+    const Formik = (initialValues: Book, isEditing: boolean) => {
+        return useFormik({
+            initialValues: initialValues,
+            validationSchema: validationSchema,
+            onSubmit: (values) => {
+                if(isEditing) {
+                    updateSelectedBook(values.bookID, values);
+                    setBookEditDialog(false);
+                } else {
+                    addCreatedBook(values);
+                    setBookAddDialog(false);
+                    setBookToAdd(emptyBook);
+                }
+                setSubmitting(false);
+            },
+            validateOnMount: true
+    });
+    }
 
     return (
         <AppLayout primarySection="drawer">
@@ -351,8 +366,8 @@ function App() {
             {/** Edit Book Dialog **/}
             {book && (<Dialog visible={bookEditDialog} header="Book Details" modal onHide={() => setBookEditDialog(false)}
                               style={{width: '42rem'}} footer={editBookDialogFooter(book.bookID)}>
-                <BookForm book={book} handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setBook({...book, [e.currentTarget.id]: e.currentTarget.value} as Book)}} showImage={true}/>
+                <BookForm handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setBook({...book, [e.currentTarget.id]: e.currentTarget.value} as Book)}} showImage={true} formik={Formik(book,true)}/>
             </Dialog>)}
 
             {/** Delete Book Dialog **/}
@@ -369,10 +384,10 @@ function App() {
 
             {/** Add Book Dialog **/}
             <Dialog onHide={() =>  setBookAddDialog(false)} header="Add a Book" modal visible={bookAddDialog}
-                    style={{width: '42rem'}} footer={addBookDialogFooter}>
-                <BookForm book={bookToAdd} handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    style={{width: '42rem'}} footer={addBookDialogFooter(Formik(bookToAdd, false))}>
+                <BookForm handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setBookToAdd({...bookToAdd, [e.currentTarget.id]: e.currentTarget.value} as Book);
-                }} showImage={false} validationSchema={validationSchema} isSubmitting={submitting}/>
+                }} showImage={false} validationSchema={validationSchema} isSubmitting={submitting} formik={Formik(bookToAdd, false)}/>
             </Dialog>
 
         </AppLayout>
@@ -381,12 +396,13 @@ function App() {
 
 // Book form component (edit & add)
 function BookForm(props: BookFormTemplate) {
+
     return (
         <>
             <div className="container-fluid">
 
-                {props.showImage && (<div className="d-flex justify-content-center align-items-center pb-3">
-                    <img src={props.book.image} alt={props.book.title}/>
+                {props.showImage && props.formik && (<div className="d-flex justify-content-center align-items-center pb-3">
+                    <img src={props.formik.values.image} alt={props.formik.values.title}/>
                 </div>)}
                 {!props.showImage && (
                     <div className="d-flex align-items-center pb-2">
@@ -394,112 +410,113 @@ function BookForm(props: BookFormTemplate) {
                     </div>
                 )}
                 <div>
-                    <Formik initialValues={props.book} validationSchema={props.validationSchema} onSubmit={(values) =>
-                        {console.log(values);
-                        props.isSubmitting = false;
-                        }}
-                    validateOnMount={true}>
-                        {(props.handleSubmit, { isSubmitting}) => (
-                    <form id="bookForm">
+                    <form id="bookForm" onSubmit={props.formik.handleSubmit}>
                         <div className="mb-3 form-group">
                             <label htmlFor="title" className="form-label">Book Title</label>
-                            <Field type="text" className="form-control" id="title" placeholder="Title"
-                                   value={props.book.title} onChange={props.handleChange}/>
-                            <ErrorMessage name="title" component="div" className="error text-danger"/>
+                            <input type="text" className="form-control" id="title" placeholder="Title"
+                                   value={props.formik.values.title} onChange={props.formik.handleChange}/>
+                            {props.formik.errors.title && props.formik.touched.title ? (
+                                <div className="error text-danger">{props.formik.errors.title}</div>
+                            ) : null}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="isbn10" className="form-label">ISBN-10</label>
                             <input type="text" className="form-control" id="isbn10" placeholder="ISBN-10"
-                                   value={props.book.isbn10} onChange={props.handleChange}/>
+                                   value={props.formik.values.isbn10} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="isbn13" className="form-label">ISBN-13</label>
                             <input type="text" className="form-control" id="isbn13" placeholder="ISBN-13"
-                                   value={props.book.isbn13} onChange={props.handleChange}/>
+                                   value={props.formik.values.isbn13} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3 form-group">
                             <label htmlFor="author" className="form-label">Author</label>
-                            <Field type="text" className="form-control" id="author" placeholder="Author"
-                                   value={props.book.author} onChange={props.handleChange}/>
-                            <ErrorMessage name="author" component="div" className="error text-danger"/>
+                            <input type="text" className="form-control" id="author" placeholder="Author"
+                                   value={props.formik.values.author} onChange={props.formik.handleChange}/>
+                            {props.formik.errors.author && props.formik.touched.author ? (
+                                <div className="error text-danger">{props.formik.errors.author}</div>
+                            ) : null}
                         </div>
                         <div className="mb-3">
-                            <label htmlFor="publisher" className="form-label">Publisher</label>
-                            <Field type="text" className="form-control" id="publisher" placeholder="Publisher"
-                                   value={props.book.publisher} onChange={props.handleChange}/>
-                            <ErrorMessage name="publisher" component="div" className="error text-danger"/>
+                            <input type="text" className="form-control" id="publisher" placeholder="Publisher"
+                                   value={props.formik.values.publisher} onChange={props.formik.handleChange}/>
+                            {props.formik.errors.publisher && props.formik.touched.publisher ? (
+                                <div className="error text-danger">{props.formik.errors.publisher}</div>
+                            ) : null}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="description" className="form-label">Description</label>
                             <input type="text" className="form-control" id="description" placeholder="Description"
-                                   value={props.book.description} onChange={props.handleChange}/>
+                                   value={props.formik.values.description} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="genre" className="form-label">Genre</label>
-                            <Field type="text" className="form-control" id="genre" placeholder="Genre"
-                                   value={props.book.genre} onChange={props.handleChange}/>
-                            <ErrorMessage name="genre" component="div" className="error text-danger"/>
+                            <input type="text" className="form-control" id="genre" placeholder="Genre"
+                                   value={props.formik.values.genre} onChange={props.formik.handleChange}/>
+                            {props.formik.errors.genre && props.formik.touched.genre ? (
+                                <div className="error text-danger">{props.formik.errors.genre}</div>
+                            ) : null}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="image" className="form-label">Image Link</label>
                             <input type="text" className="form-control" id="image" placeholder="Image Link"
-                                   value={props.book.image} onChange={props.handleChange}/>
+                                   value={props.formik.values.image} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="language" className="form-label">Language</label>
                             <input type="text" className="form-control" id="language" placeholder="Language"
-                                   value={props.book.language} onChange={props.handleChange}/>
+                                   value={props.formik.values.language} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <p className="form-label">Release Date</p>
-                            <Calendar showButtonBar value={new Date(props.book.releaseDate)} inputId="releaseDate"
-                                      name="Release Date" dateFormat="mm/dd/yy"/>
+                            <Calendar showButtonBar value={new Date(props.formik.values.releaseDate)} inputId="releaseDate"
+                                      name="Release Date" dateFormat="mm/dd/yy" onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="pageCount" className="form-label">Pages</label>
-                            <Field type="number" className="form-control" id="pageCount" placeholder="Pages"
-                                   value={props.book.pageCount} onChange={props.handleChange}/>
-                            <ErrorMessage name="pageCount" component="div" className="error text-danger"/>
+                            <input type="number" className="form-control" id="pageCount" placeholder="Pages"
+                                   value={props.formik.values.pageCount} onChange={props.formik.handleChange}/>
+                            {props.formik.errors.pageCount && props.formik.touched.pageCount ? (
+                                <div className="error text-danger">{props.formik.errors.pageCount}</div>
+                            ) : null}
                         </div>
                         <div className="mb-3">
                             <label htmlFor="hardcoverPrice" className="form-label">Hardcover Price</label>
                             <input type="number" className="form-control" id="hardcoverPrice"
                                    placeholder="Hardcover Price" step="0.01" min="0.00"
-                                   value={props.book.hardcoverPrice} onChange={props.handleChange}/>
+                                   value={props.formik.values.hardcoverPrice} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="paperbackPrice" className="form-label">Paperback Price</label>
                             <input type="number" className="form-control" id="paperbackPrice"
                                    placeholder="Paperback Price" step="0.01" min="0.00"
-                                   value={props.book.paperbackPrice} onChange={props.handleChange}/>
+                                   value={props.formik.values.paperbackPrice} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="ebookPrice" className="form-label">eBook Price</label>
                             <input type="number" className="form-control" id="ebookPrice"
                                    placeholder="eBook Price" step="0.01" min="0.00"
-                                   value={props.book.ebookPrice} onChange={props.handleChange}/>
+                                   value={props.formik.values.ebookPrice} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="audiobookPrice" className="form-label">Audiobook Price</label>
                             <input type="number" className="form-control" id="audiobookPrice"
                                    placeholder="Audiobook Price" step="0.01" min="0.00"
-                                   value={props.book.audiobookPrice} onChange={props.handleChange}/>
+                                   value={props.formik.values.audiobookPrice} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="ratings" className="form-label">Rating</label>
                             <input type="number" className="form-control" id="ratings"
                                    placeholder="Rating" step="0.01" min="0.00"
-                                   value={props.book.ratings} onChange={props.handleChange}/>
+                                   value={props.formik.values.ratings} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="ratingsCount" className="form-label">Ratings</label>
                             <input type="number" className="form-control" id="ratingsCount"
                                    placeholder="Ratings" min="0" step="1"
-                                   value={props.book.ratingsCount} onChange={props.handleChange}/>
+                                   value={props.formik.values.ratingsCount} onChange={props.formik.handleChange}/>
                         </div>
                     </form>
-                        )}
-                    </Formik>
                 </div>
             </div>
         </>
