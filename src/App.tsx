@@ -478,7 +478,9 @@ function BookForm(props: BookFormTemplate) {
                         <div className="mb-3">
                             <p className="form-label">Release Date</p>
                             <Calendar showButtonBar value={new Date(props.formik.values.releaseDate)} inputId="releaseDate"
-                                      name="Release Date" dateFormat="mm/dd/yy" onChange={props.formik.handleChange}/>
+                                      name="Release Date"  onChange={(e) => {
+                                          props.formik.setFieldValue('releaseDate', e.value);
+                            }}/>
                         </div>
                         <div className="mb-3">
                             <label htmlFor="pageCount" className="form-label">Pages</label>
