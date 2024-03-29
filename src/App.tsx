@@ -27,7 +27,7 @@ import {SearchIcon} from "primereact/icons/search";
 import {Toast} from 'primereact/toast';
 import {currencyFormatter, emptyBook} from "./logic/misc";
 import {Calendar} from "primereact/calendar";
-import {Formik, Field, Form, ErrorMessage, FormikProps, useFormik} from 'formik';
+import {FormikProps, useFormik} from 'formik';
 import * as Yup from 'yup';
 
 function App() {
@@ -46,6 +46,37 @@ function App() {
     const [bookToAdd, setBookToAdd] = useState<Book>(emptyBook);
     const [submitting, setSubmitting] = useState(true);
     const formRef = useRef<FormikProps<Book>>(null);
+
+    const validationSchema = Yup.object().shape({
+        title: Yup.string().required('Title is required'),
+        author: Yup.string().required('Author is required'),
+        publisher: Yup.string().required('Publisher is required'),
+        genre: Yup.string().required('Genre is required'),
+        pageCount: Yup.number().required('Page Count is required').positive('Page Count must be positive').integer('Page Count must be an integer').min(1, 'Page Count must be at least 1')
+    });
+
+    // form validation for adding a book
+    const formikAdd = useFormik({
+        initialValues: emptyBook,
+        validationSchema: validationSchema,
+        onSubmit: (values) => {
+            addCreatedBook(values);
+            setBookAddDialog(false);
+            setSubmitting(false);
+        },
+    })
+
+    // form validation for editing a book
+    const formikEdit = useFormik({
+        initialValues: book || emptyBook,
+        validationSchema: validationSchema,
+        onSubmit: (values) => {
+            updateSelectedBook(values.bookID, values);
+            setBookEditDialog(false);
+            setSubmitting(false);
+        },
+        enableReinitialize: true
+    })
 
     // Fetch books and users
     useEffect(() => {
@@ -94,6 +125,7 @@ function App() {
             await addBook(book);
             const updatedBooks = await getBooks();
             setBooks(updatedBooks);
+            formikAdd.resetForm();
         } catch (error:any) {
             console.error(error);
             if(toast.current) {
@@ -129,15 +161,6 @@ function App() {
             }
         }
     }
-
-    const validationSchema = Yup.object().shape({
-        title: Yup.string().required('Title is required'),
-        author: Yup.string().required('Author is required'),
-        publisher: Yup.string().required('Publisher is required'),
-        genre: Yup.string().required('Genre is required'),
-        pageCount: Yup.number().required('Page Count is required').positive('Page Count must be positive').integer('Page Count must be an integer').min(1, 'Page Count must be at least 1'),
-    })
-
 
     // Template for datatable that represents the edit and delete buttons
     const editAndDeleteButtonTemplate = (book: Book) => {
@@ -180,8 +203,7 @@ function App() {
                     </div>
                     <div className="m-1">
                         <button onClick={() => {
-                            setBookEditDialog(false);
-                            updateSelectedBook(bookID, book);
+                            formikEdit.handleSubmit();
                         }} className="btn btn-success d-flex align-items-center" style={{paddingLeft: '2rem', paddingRight: '2rem'}}><CheckIcon style={{marginRight: '.5rem'}}/>Save
                         </button>
                     </div>
@@ -192,17 +214,21 @@ function App() {
     );
 
     // Add book dialog footer with add and cancel buttons
-    const addBookDialogFooter = (formik: FormikProps<Book>) => (
+    const addBookDialogFooter = () => (
         <div className="d-flex justify-content-end">
 
             <div className="m-1">
-                <button onClick={() =>  setBookAddDialog(false)} className="btn btn-outline-primary d-flex align-items-center"
+                <button onClick={() =>  {
+                    formikAdd.resetForm();
+                    formikAdd.setErrors({});
+                    setBookAddDialog(false);
+                }} className="btn btn-outline-primary d-flex align-items-center"
                         style={{paddingLeft: '2rem', paddingRight: '2rem'}}><TimesIcon style={{marginRight: '.5rem'}}/>Cancel
                 </button>
             </div>
             <div className="m-1">
                 <button onClick={() => {
-                    formik.handleSubmit();
+                    formikAdd.handleSubmit();
                 }} className="btn btn-success d-flex align-items-center" style={{paddingLeft: '2rem', paddingRight: '2rem'}}><CheckIcon style={{marginRight: '.5rem'}}/>Add
                 </button>
             </div>
@@ -260,25 +286,6 @@ function App() {
                 </button>
             </div>);
     };
-
-    const Formik = (initialValues: Book, isEditing: boolean) => {
-        return useFormik({
-            initialValues: initialValues,
-            validationSchema: validationSchema,
-            onSubmit: (values) => {
-                if(isEditing) {
-                    updateSelectedBook(values.bookID, values);
-                    setBookEditDialog(false);
-                } else {
-                    addCreatedBook(values);
-                    setBookAddDialog(false);
-                    setBookToAdd(emptyBook);
-                }
-                setSubmitting(false);
-            },
-            validateOnMount: true
-    });
-    }
 
     return (
         <AppLayout primarySection="drawer">
@@ -367,7 +374,7 @@ function App() {
             {book && (<Dialog visible={bookEditDialog} header="Book Details" modal onHide={() => setBookEditDialog(false)}
                               style={{width: '42rem'}} footer={editBookDialogFooter(book.bookID)}>
                 <BookForm handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setBook({...book, [e.currentTarget.id]: e.currentTarget.value} as Book)}} showImage={true} formik={Formik(book,true)}/>
+                    setBook({...book, [e.currentTarget.id]: e.currentTarget.value} as Book)}} showImage={true} formik={formikEdit}/>
             </Dialog>)}
 
             {/** Delete Book Dialog **/}
@@ -384,10 +391,10 @@ function App() {
 
             {/** Add Book Dialog **/}
             <Dialog onHide={() =>  setBookAddDialog(false)} header="Add a Book" modal visible={bookAddDialog}
-                    style={{width: '42rem'}} footer={addBookDialogFooter(Formik(bookToAdd, false))}>
+                    style={{width: '42rem'}} footer={addBookDialogFooter}>
                 <BookForm handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setBookToAdd({...bookToAdd, [e.currentTarget.id]: e.currentTarget.value} as Book);
-                }} showImage={false} validationSchema={validationSchema} isSubmitting={submitting} formik={Formik(bookToAdd, false)}/>
+                }} showImage={false} validationSchema={validationSchema} isSubmitting={submitting} formik={formikAdd}/>
             </Dialog>
 
         </AppLayout>
@@ -438,6 +445,7 @@ function BookForm(props: BookFormTemplate) {
                             ) : null}
                         </div>
                         <div className="mb-3">
+                            <label htmlFor="publisher" className="form-label">Publisher</label>
                             <input type="text" className="form-control" id="publisher" placeholder="Publisher"
                                    value={props.formik.values.publisher} onChange={props.formik.handleChange}/>
                             {props.formik.errors.publisher && props.formik.touched.publisher ? (
