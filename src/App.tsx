@@ -29,6 +29,7 @@ import {currencyFormatter, emptyBook} from "./logic/misc";
 import {Calendar} from "primereact/calendar";
 import {FormikProps, useFormik} from 'formik';
 import * as Yup from 'yup';
+import {format} from 'date-fns';
 
 function App() {
 
@@ -477,10 +478,10 @@ function BookForm(props: BookFormTemplate) {
                         </div>
                         <div className="mb-3">
                             <p className="form-label">Release Date</p>
-                            <Calendar showButtonBar value={new Date(props.formik.values.releaseDate)} inputId="releaseDate"
+                            <Calendar showButtonBar value={new Date(props.formik.values.releaseDate)} inputId="releaseDate" dateFormat={"yy-mm-dd"}
                                       name="Release Date"  onChange={(e) => {
-                                          props.formik.setFieldValue('releaseDate', e.value);
-                            }}/>
+                                          props.formik.setFieldValue('releaseDate', e.value ? e.value : new Date());
+                            }} />
                         </div>
                         <div className="mb-3">
                             <label htmlFor="pageCount" className="form-label">Pages</label>

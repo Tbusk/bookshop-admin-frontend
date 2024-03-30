@@ -25,7 +25,7 @@ export const emptyBook:Book = {
     image: '',
     language: 'English',
     pageCount: 0,
-    releaseDate: new Date().toISOString().slice(0,10),
+    releaseDate: new Date().toISOString(),
     hardcoverPrice: 0,
     paperbackPrice: 0,
     ebookPrice: 0,
