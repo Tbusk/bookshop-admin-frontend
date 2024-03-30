@@ -42,7 +42,7 @@ export async function getBook(bookID: number): Promise<Book> {
     }
 }
 
-// add books to the database
+// add a book to the database
 export async function addBook(book: Book): Promise<Book> {
     try {
         const response = await fetch(`http://localhost:8080/api/books`, {
@@ -64,7 +64,7 @@ export async function addBook(book: Book): Promise<Book> {
     }
 }
 
-// update books in the database
+// update a book in the database
 export async function updateBook(bookID: number, book: Book): Promise<Book> {
     try {
         const response = await fetch(`http://localhost:8080/api/books/${bookID}`, {
@@ -86,7 +86,7 @@ export async function updateBook(bookID: number, book: Book): Promise<Book> {
     }
 }
 
-// delete books from the database
+// delete a book from the database
 export async function deleteBook(bookID: number): Promise<Book> {
     try {
         const response = await fetch(`http://localhost:8080/api/books/${bookID}`, {

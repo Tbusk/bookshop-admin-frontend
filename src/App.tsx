@@ -48,6 +48,7 @@ function App() {
     const [submitting, setSubmitting] = useState(true);
     const formRef = useRef<FormikProps<Book>>(null);
 
+    // Form validation schema for adding and editing books
     const validationSchema = Yup.object().shape({
         title: Yup.string().required('Title is required'),
         author: Yup.string().required('Author is required'),
@@ -335,7 +336,6 @@ function App() {
                     <>
                         <DataTable value={users} size={"large"} stripedRows paginator rows={10}>
                             {visibleUserColumns.map((column) => {
-
 
                                 return (
                                     <Column key={column.field} field={column.field} header={column.header} sortable/>

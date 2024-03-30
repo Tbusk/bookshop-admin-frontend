@@ -2,10 +2,6 @@
 // Check if a date is valid
 import {Book} from "./interfaces";
 
-export function isValidDate(date: any) {
-    return date instanceof Date && !isNaN(date.getTime());
-}
-
 // Currency formatter
 export const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
