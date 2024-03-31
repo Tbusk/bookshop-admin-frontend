@@ -7,6 +7,7 @@ export async function getBooks():Promise<Book[]> {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('jwtToken')}`
                 }
             }
         );
@@ -28,6 +29,7 @@ export async function getBook(bookID: number): Promise<Book> {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('jwtToken')}`
                 }
             }
         );
@@ -49,6 +51,7 @@ export async function addBook(book: Book): Promise<Book> {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('jwtToken')}`
                 },
                 body: JSON.stringify(book)
             }
@@ -71,6 +74,7 @@ export async function updateBook(bookID: number, book: Book): Promise<Book> {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('jwtToken')}`
                 },
             body: JSON.stringify(book)
             }
@@ -93,6 +97,7 @@ export async function deleteBook(bookID: number): Promise<Book> {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('jwtToken')}`
                 }
             }
         );

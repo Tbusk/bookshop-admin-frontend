@@ -7,6 +7,7 @@ export async function getUsers():Promise<User[]> {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('jwtToken')}`
                 }
             }
         );

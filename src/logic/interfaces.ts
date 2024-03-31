@@ -50,3 +50,9 @@ export interface BookFormTemplate {
     isSubmitting?: boolean,
     formik: FormikProps<Book>
 }
+
+// Interface used for login
+export interface Login {
+    username: string,
+    password: string
+}

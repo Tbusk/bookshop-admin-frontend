@@ -9,7 +9,7 @@ import personFillGear from 'bootstrap-icons/icons/person-fill-gear.svg';
 import bookIcon from 'bootstrap-icons/icons/book.svg';
 import { Icon } from '@hilla/react-components/Icon';
 import {DataTable} from "primereact/datatable";
-import {Book, BookFormTemplate, User} from "./logic/interfaces";
+import {Book, BookFormTemplate, Login, User} from "./logic/interfaces";
 import {getBooks, getBook, deleteBook, updateBook, addBook} from "./logic/bookFetches";
 import {getUsers} from "./logic/userFetches";
 import { Column } from 'primereact/column';
@@ -29,7 +29,7 @@ import {currencyFormatter, emptyBook} from "./logic/misc";
 import {Calendar} from "primereact/calendar";
 import {FormikProps, useFormik} from 'formik';
 import * as Yup from 'yup';
-import {format} from 'date-fns';
+import {login} from "./logic/login";
 
 function App() {
 
@@ -47,6 +47,8 @@ function App() {
     const [bookToAdd, setBookToAdd] = useState<Book>(emptyBook);
     const [submitting, setSubmitting] = useState(true);
     const formRef = useRef<FormikProps<Book>>(null);
+    const [authenticated, setAuthenticated] = useState(sessionStorage.getItem('jwtToken') !== null);
+    const [loginError, setLoginError] = useState<string>('');
 
     // Form validation schema for adding and editing books
     const validationSchema = Yup.object().shape({
@@ -95,7 +97,7 @@ function App() {
                 toast.current.show({severity:'error', summary: 'Error Message', detail: error.message, life: 3000});
             }
         }
-    }, []);
+    }, [authenticated]);
 
     // Column toggle for book columns
     const onBookColumnToggle = (e: MultiSelectChangeEvent) => {
@@ -327,6 +329,8 @@ function App() {
                     </a>
                 </Tab>
             </Tabs>
+
+            {authenticated ? (<>
             <div className="container-fluid p-4">
                 {/** Error Message Popups **/}
                 <Toast ref={toast} />
@@ -397,7 +401,52 @@ function App() {
                     setBookToAdd({...bookToAdd, [e.currentTarget.id]: e.currentTarget.value} as Book);
                 }} showImage={false} validationSchema={validationSchema} isSubmitting={submitting} formik={formikAdd}/>
             </Dialog>
-
+        </>) : (
+            <div className="d-flex align-items-center justify-content-center">
+                <div className="col-xxl-5 col-xl-6 col-lg-6 col-12 p-4">
+                    <div className="card p-3">
+                        <div>
+                            <div slot="drawer" className="d-flex align-items-center justify-content-center pt-5 pb-5"
+                                 style={{paddingLeft: '1rem', paddingTop: '.5rem'}}>
+                                <img src={img} alt="bookshop" style={{height: '60px', width: 'auto', marginRight: 14}}/>
+                                <h1 className="metrophobic-regular m-0" style={{fontSize: '56px'}}>Bookshop</h1>
+                            </div>
+                            <div className="card-body">
+                                <form id="login-form">
+                                    <div className="form-outline mb-3">
+                                        <input type="text" name="username" id="username" className="form-control"
+                                               placeholder="Username"/>
+                                    </div>
+                                    <div className="form-outline mb-3">
+                                        <input type="password" id="password" name="password"
+                                               className="form-control"
+                                               placeholder="Password"/>
+                                    </div>
+                                    <div className="mb-3 d-flex align-items-center justify-content-center text-danger">
+                                        {loginError}
+                                    </div>
+                                    <div className="d-flex justify-content-center">
+                                        <button type="button" className="btn btn-primary text-white" onClick={async () => {
+                                            let formCreds:Login = {
+                                                username: (document.getElementById('username') as HTMLInputElement).value,
+                                                password: (document.getElementById('password') as HTMLInputElement).value
+                                            };
+                                            await login(formCreds);
+                                            setAuthenticated(sessionStorage.getItem('jwtToken') !== null);
+                                            if(!authenticated) {
+                                                setLoginError('Invalid credentials');
+                                            } else {
+                                                setLoginError('');
+                                            }
+                                        }}>Login
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>)}
         </AppLayout>
     );
 }
@@ -409,12 +458,14 @@ function BookForm(props: BookFormTemplate) {
         <>
             <div className="container-fluid">
 
-                {props.showImage && props.formik && (<div className="d-flex justify-content-center align-items-center pb-3">
-                    <img src={props.formik.values.image} alt={props.formik.values.title}/>
-                </div>)}
+                {props.showImage && props.formik && (
+                    <div className="d-flex justify-content-center align-items-center pb-3">
+                        <img src={props.formik.values.image} alt={props.formik.values.title}/>
+                    </div>)}
                 {!props.showImage && (
                     <div className="d-flex align-items-center pb-2">
-                        <p className="lato-regular">A title, author, publisher, genre, page count, description, release date, and at least one price metric are required.</p>
+                        <p className="lato-regular">A title, author, publisher, genre, page count, description, release
+                            date, and at least one price metric are required.</p>
                     </div>
                 )}
                 <div>
@@ -433,7 +484,7 @@ function BookForm(props: BookFormTemplate) {
                                    value={props.formik.values.isbn10} onChange={props.formik.handleChange}/>
                         </div>
                         <div className="mb-3">
-                            <label htmlFor="isbn13" className="form-label">ISBN-13</label>
+                        <label htmlFor="isbn13" className="form-label">ISBN-13</label>
                             <input type="text" className="form-control" id="isbn13" placeholder="ISBN-13"
                                    value={props.formik.values.isbn13} onChange={props.formik.handleChange}/>
                         </div>
