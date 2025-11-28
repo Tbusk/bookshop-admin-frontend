@@ -241,6 +241,15 @@ function App() {
         </div>
     );
 
+    // Date formatter for release date
+    const dateBodyTemplate = (book: Book) => {
+        const date = new Date(book.releaseDate);
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const year = date.getFullYear();
+        return <span>{`${month}/${day}/${year}`}</span>;
+    };
+
     // Price formatter for book prices
     const priceBodyTemplate = (book: Book, field: string) => {
         switch(field) {
@@ -367,6 +376,12 @@ function App() {
                                     return (
                                         <Column key={column.field} field={column.field} header={column.header} sortable
                                                 body={(book)=> priceBodyTemplate(book, column.field)}/>
+                                    );
+                                }
+                                if(column.field === 'releaseDate') {
+                                    return (
+                                        <Column key={column.field} field={column.field} header={column.header} sortable
+                                                body={dateBodyTemplate}/>
                                     );
                                 }
                                 return (<Column key={column.field} field={column.field} header={column.header} sortable/>);
