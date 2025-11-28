@@ -33,6 +33,8 @@ import {login} from "./logic/login";
 
 function App() {
 
+    document.title = "Bookshop CMS"
+
     const [pageSelected, setPageSelected] = useState(0);
     const [books, setBooks] = useState<Book[]>([]);
     const [book, setBook] = useState<Book>();
