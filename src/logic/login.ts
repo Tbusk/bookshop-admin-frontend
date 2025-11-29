@@ -1,7 +1,7 @@
 import {Login} from "./interfaces";
 
 export async function login(user: Login) {
-    await fetch('http://localhost:8080/login', {
+    await fetch(`${process.env.REACT_APP_API_URL}/login`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -3,7 +3,7 @@ import {User} from "./interfaces";
 // Fetches all users from the database
 export async function getUsers():Promise<User[]> {
     try {
-        const response = await fetch(`http://localhost:8080/api/users/list`, {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/list`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
