@@ -1,0 +1,9 @@
+FROM node:25-alpine3.21
+
+VOLUME /build
+
+RUN npm install -g serve --silent
+
+EXPOSE 3000
+
+ENTRYPOINT exec serve -s build -l 3000
